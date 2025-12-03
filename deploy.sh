@@ -1,5 +1,7 @@
 #!/bin/bash
 
+GITHUB_TOKEN=
+
 set -e
 
 bold=$(tput bold)
@@ -151,7 +153,7 @@ done
 echo -e "\n\n${bold}Cloning project repo...${normal}\n\n"
 
 rm -rf "$REPONAME"
-git clone --depth=1 --single-branch "https://github.com/sisoputnfrba/${REPONAME}.git"
+git clone --depth=1 --single-branch "https://${GITHUB_TOKEN}@github.com/sisoputnfrba/${REPONAME}.git"
 
 echo -e "\n\n${bold}Building dependencies${normal}..."
 
