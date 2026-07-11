@@ -173,12 +173,11 @@ config_local() {
 
 config_remote() {
     local ip="$1" key="$2" value="$3"
-    local remote_dir="~/so-deploy/${REPO_NAME}"
 
     log_info "Configurando remoto (${ip}): ${key}=${value}"
 
     ssh_cmd "$ip" "
-        cd ${remote_dir} &&
+        cd \$HOME/so-deploy/${REPO_NAME} &&
         grep -Rl '^\s*${key}\s*=' . | grep -E '\.config|\.cfg' | xargs -r sed -i 's|^\(${key}\s*=\).*|\1${value}|'
     "
 
@@ -263,17 +262,16 @@ run_local() {
 run_remote() {
     local ip="$1" binary="$2"; shift 2
     local extra_args=("$@")
-    local remote_dir="~/so-deploy/${REPO_NAME}"
 
     log_info "=== Ejecutando ${binary} en ${ip} ==="
 
-    local run_cmd="cd ${remote_dir}/${binary}"
+    local run_cmd="cd \$HOME/so-deploy/${REPO_NAME}/${binary}"
 
     case "$binary" in
         kernel_scheduler)
             local prc="${extra_args[0]:-PHP.prc}"
             if [[ ! "${prc}" = *"/"* ]]; then
-                prc="${remote_dir}/kernel_memory/scripts/${prc}"
+                prc="\$HOME/so-deploy/${REPO_NAME}/kernel_memory/scripts/${prc}"
             fi
             run_cmd+=" && ./bin/${binary} ${binary}.config ${prc}"
             ;;
@@ -339,12 +337,12 @@ status_vm() {
             log_err "Repositorio NO clonado"
         fi
     else
-        local remote_dir="~/so-deploy/${REPO_NAME}"
         ssh_cmd "$ip" "
-            if [[ -d '${remote_dir}' ]]; then
+            REPO_DIR=\$HOME/so-deploy/${REPO_NAME}
+            if [[ -d \"\${REPO_DIR}\" ]]; then
                 echo '  ✓ Repositorio clonado'
                 for comp in ${components}; do
-                    if [[ -f '${remote_dir}/\${comp}/bin/\${comp}' ]]; then
+                    if [[ -f \"\${REPO_DIR}/\${comp}/bin/\${comp}\" ]]; then
                         echo \"  ✓ Binario compilado: \${comp}\"
                     else
                         echo \"  ✗ Binario NO compilado: \${comp}\"
