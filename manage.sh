@@ -130,6 +130,7 @@ deploy_remote() {
     log_info "Componentes: ${components}"
 
     ssh_cmd "$ip" "
+        export TERM=xterm &&
         export GITHUB_TOKEN='${GITHUB_TOKEN}' &&
         rm -rf so-deploy &&
         git clone --depth=1 https://github.com/LuichiTW/so-deploy.git &&
