@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GITHUB_TOKEN=
+GITHUB_TOKEN=${GITHUB_TOKEN:-}
 
 set -e
 
