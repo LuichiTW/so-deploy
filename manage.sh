@@ -129,7 +129,7 @@ deploy_remote() {
     log_info "=== Deploy remoto (${ip}) ==="
     log_info "Componentes: ${components}"
 
-    ssh_cmd "$ip" "
+    sshpass -p "${SSH_PASS}" ssh -t -o StrictHostKeyChecking=no -o ConnectTimeout=5 "${SSH_USER}@${ip}" "
         export TERM=xterm &&
         export GITHUB_TOKEN='${GITHUB_TOKEN}' &&
         rm -rf so-deploy &&
