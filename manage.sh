@@ -199,6 +199,104 @@ config_all() {
 }
 
 # =====================================================
+# Test Profiles
+# =====================================================
+
+apply_test_profile() {
+    local profile="$1"
+    local -a configs
+
+    case "$profile" in
+        base)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "CMN"
+                "QUEUES_ALGORITHMS" "[FIFO,RR,FIFO,RR]"
+                "RR_QUANTUM" "600"
+                "SUSPENSION_TIMEOUT" "60000"
+                "SEGMENT_MAX_SIZE" "128"
+                "ALLOCATION_STRATEGY" "BEST"
+                "INSTRUCTION_DELAY" "250"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        corto-plazo)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "CMN"
+                "QUEUES_ALGORITHMS" "[FIFO,RR,RR,RR]"
+                "RR_QUANTUM" "1500"
+                "SUSPENSION_TIMEOUT" "35000"
+                "SEGMENT_MAX_SIZE" "256"
+                "ALLOCATION_STRATEGY" "BEST"
+                "INSTRUCTION_DELAY" "500"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        memoria-best)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "RR"
+                "QUEUES_ALGORITHMS" "[FIFO,RR,RR,RR]"
+                "RR_QUANTUM" "1500"
+                "SUSPENSION_TIMEOUT" "35000"
+                "SEGMENT_MAX_SIZE" "128"
+                "ALLOCATION_STRATEGY" "BEST"
+                "INSTRUCTION_DELAY" "500"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        memoria-worst)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "RR"
+                "QUEUES_ALGORITHMS" "[FIFO,RR,RR,RR]"
+                "RR_QUANTUM" "1500"
+                "SUSPENSION_TIMEOUT" "35000"
+                "SEGMENT_MAX_SIZE" "128"
+                "ALLOCATION_STRATEGY" "WORST"
+                "INSTRUCTION_DELAY" "500"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        mediano-plazo)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "CMN"
+                "QUEUES_ALGORITHMS" "[FIFO,FIFO,FIFO,FIFO]"
+                "RR_QUANTUM" "1500"
+                "SUSPENSION_TIMEOUT" "10000"
+                "SEGMENT_MAX_SIZE" "128"
+                "ALLOCATION_STRATEGY" "BEST"
+                "INSTRUCTION_DELAY" "500"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        prioridades)
+            configs=(
+                "PLANIFICATION_ALGORITHM" "CMN"
+                "QUEUES_ALGORITHMS" "[FIFO,FIFO,FIFO,FIFO,FIFO,FIFO]"
+                "RR_QUANTUM" "1500"
+                "SUSPENSION_TIMEOUT" "1000000"
+                "SEGMENT_MAX_SIZE" "128"
+                "ALLOCATION_STRATEGY" "BEST"
+                "INSTRUCTION_DELAY" "500"
+                "COMPACTION_DELAY" "30000"
+            )
+            ;;
+        *)
+            log_err "Perfil desconocido: ${profile}"
+            echo "Perfiles disponibles: base corto-plazo memoria-best memoria-worst mediano-plazo prioridades"
+            return 1
+            ;;
+    esac
+
+    log_info "=== Aplicando perfil: ${profile} ==="
+
+    local i
+    for ((i=0; i<${#configs[@]}; i+=2)); do
+        config_all "${configs[$i]}" "${configs[$((i+1))]}"
+    done
+
+    log_ok "Perfil '${profile}' aplicado en todas las VMs"
+}
+
+# =====================================================
 # Run
 # =====================================================
 
@@ -381,10 +479,20 @@ Comandos:
   config-local <KEY> <VALUE>  Modificar config solo local
   config-remote <IP> <KEY> <VALUE>  Modificar config en VM remota
 
+  test <perfil>               Aplicar perfil de prueba en todas las VMs
+
   run <binario> [args...]     Ejecutar binario localmente
   run-remote <IP> <binario> [args...]  Ejecutar binario en VM remota
 
   status                      Verificar clonacion y compilacion
+
+Perfiles de prueba:
+  base                        Pruebas base
+  corto-plazo                 Planificacion a corto plazo
+  memoria-best                Memoria con BEST
+  memoria-worst               Memoria con WORST
+  mediano-plazo               Pruebas de mediano plazo
+  prioridades                 Herencia de prioridades
 
 Binarios:
   kernel_scheduler [prc]      (default: PHP.prc)
@@ -396,7 +504,8 @@ Binarios:
 
 Ejemplos:
   $(basename "$0") deploy
-  $(basename "$0") config IP_KERNEL_SCHEDULER=192.168.100.99
+  $(basename "$0") config IP_KERNEL_SCHEDULER 192.168.100.99
+  $(basename "$0") test base
   $(basename "$0") run kernel_scheduler PHP.prc
   $(basename "$0") run memory_stick 2
   $(basename "$0") run-remote 192.168.100.135 kernel_scheduler
@@ -445,6 +554,10 @@ case "$CMD" in
     run-remote)
         [[ $# -lt 2 ]] && { log_err "Uso: run-remote <IP> <binario> [args...]"; exit 1; }
         run_remote "$@"
+        ;;
+    test)
+        [[ $# -lt 1 ]] && { log_err "Uso: test <perfil>"; log_err "Perfiles disponibles: base corto-plazo memoria-best memoria-worst mediano-plazo prioridades"; exit 1; }
+        apply_test_profile "$1"
         ;;
     status)
         status_all
